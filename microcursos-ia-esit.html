@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Microcursos IA Aplicada | ESIT</title>
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700;900&family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Open Sans',sans-serif;color:#1a1a2e;background:#fff;line-height:1.6;overflow-x:hidden}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:#c8102e;border-radius:3px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes modalDrop{from{opacity:0;transform:translateY(-20px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes accordOpen{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect}=React;
+
+/* ── hook: viewport width ─────────────────────────── */
+function useWidth(){
+  const [w,setW]=useState(typeof window!=='undefined'?window.innerWidth:1200);
+  useEffect(()=>{
+    const fn=()=>setW(window.innerWidth);
+    window.addEventListener('resize',fn);
+    return()=>window.removeEventListener('resize',fn);
+  },[]);
+  return w;
+}
+
+/* ── PALETTE ──────────────────────────────────────── */
+const C={
+  navy:'#0a1628',navyMid:'#132144',navyLight:'#1e3460',
+  red:'#c8102e',orange:'#f5820d',
+  gray:'#f4f5f7',border:'#dde1e9',
+  text:'#1a1a2e',muted:'#5a6175',light:'#8a94a6',
+  commonBg:'#fffbf0',commonBorder:'#f0c040',commonAccent:'#c07800',
+  specBg:'#fff5f5',specBorder:'#f0b0b0',specAccent:'#b01020',
+};
+const CAT={
+  empresa:    {label:'Empresa y gestión',       pill:'#783800',pillBg:'#fff3e0'},
+  operacion:  {label:'Operación y tecnología',  pill:'#003d7a',pillBg:'#e8f1fb'},
+  publico:    {label:'Sector público e impacto',pill:'#145a32',pillBg:'#e8f5ec'},
+  creatividad:{label:'Creatividad y verticales',pill:'#5b1fa0',pillBg:'#f2ebff'},
+};
+const FILTERS=[
+  {k:'all',l:'Todos'},
+  {k:'empresa',l:'Empresa'},
+  {k:'operacion',l:'Tecnología'},
+  {k:'publico',l:'Sector público'},
+  {k:'creatividad',l:'Creatividad'},
+];
+
+/* ── DATA ─────────────────────────────────────────── */
+const COMMON=[
+  {num:1,label:'Tema común',tag:'Común',accent:C.commonAccent,bg:C.commonBg,border:C.commonBorder,
+   title:'Fundamentos de IA y su impacto profesional',
+   enfoque:'Carácter introductorio, conceptual y contextual. Ofrece una visión general de qué es la IA, sus capacidades y limitaciones y por qué está teniendo un impacto creciente en profesiones, organizaciones y sectores.',
+   resultados:['Comprender el concepto de IA y distinguir sus características principales.','Identificar las capacidades, limitaciones y alcance actual de la IA.','Reconocer el impacto de la IA en los entornos profesionales y organizativos.'],
+   contenidos:['Concepto de IA y evolución reciente.','Diferencias entre IA, automatización, analítica de datos y transformación digital.','Capacidades actuales de la IA y principales limitaciones.','Impacto de la IA en profesiones, organizaciones y sectores.','Oportunidades y desafíos en la incorporación de la IA al entorno profesional.'],
+  },
+  {num:2,label:'Tema común',tag:'Común',accent:C.commonAccent,bg:C.commonBg,border:C.commonBorder,
+   title:'Funcionamiento de la IA: aprendizaje automático, redes neuronales e IA generativa',
+   enfoque:'Carácter explicativo y de comprensión funcional. Acerca al estudiante los principales enfoques de la IA de forma accesible: ML, redes neuronales e IA generativa, sin tecnicismos avanzados.',
+   resultados:['Diferenciar los principales enfoques de la IA: ML, redes neuronales e IA generativa.','Comprender la lógica de funcionamiento de estos enfoques y su utilidad práctica.','Relacionar los enfoques de IA con sus primeras aplicaciones profesionales.'],
+   contenidos:['Introducción al aprendizaje automático y su lógica general.','Redes neuronales: principios básicos y papel en la IA actual.','IA generativa: qué es, cómo funciona y qué posibilidades ofrece.','Diferencias entre los principales enfoques actuales de la IA.','Primeras aplicaciones profesionales del ML, redes neuronales e IA generativa.'],
+  },
+];
+
+const mkSpec=(num,title,enfoque,resultados,contenidos)=>({
+  num,label:'Tema específico',tag:'Sectorial',accent:C.specAccent,bg:C.specBg,border:C.specBorder,
+  title,enfoque,resultados,contenidos,
+});
+
+const COURSES=[
+  {id:'negocio',cat:'empresa',icon:'💼',title:'IA aplicada al negocio',
+   desc:'Comprende cómo la IA transforma modelos de negocio, toma de decisiones y gestión estratégica empresarial.',
+   finalidad:'Identificar aplicaciones y oportunidades de la IA en las distintas áreas de la empresa y en la toma de decisiones de negocio.',
+   topics:[
+    mkSpec(3,'Aplicaciones actuales de la IA en el negocio',
+     'Muestra en qué ámbitos y procesos se aplica la IA en las organizaciones: marketing, ventas, atención al cliente, operaciones, finanzas y RRHH.',
+     ['Identificar las principales áreas de aplicación de la IA en el negocio.','Reconocer procesos donde la IA está generando valor.','Analizar ejemplos representativos en contextos empresariales.'],
+     ['Ámbitos de aplicación actual de la IA en el negocio.','Procesos de negocio en los que la IA genera valor.','Ejemplos de uso en contextos empresariales reales.','Beneficios de la IA en las organizaciones.','Tendencias actuales de adopción de IA en el negocio.']),
+    mkSpec(4,'Oportunidades y casos de uso de la IA en el negocio',
+     'Casos de uso representativos para mostrar cómo la IA puede apoyar la captación, personalización, eficiencia operativa y soporte a la decisión en entornos empresariales.',
+     ['Identificar oportunidades concretas de la IA en el negocio.','Analizar casos en marketing, operaciones y soporte a la decisión.','Valorar el potencial de la IA para mejorar resultados y eficiencia.'],
+     ['Identificación de oportunidades de la IA en el negocio.','Caso: personalización comercial y marketing inteligente.','Caso: automatización y eficiencia operativa.','Caso: analítica predictiva y apoyo a la decisión.','Condiciones de viabilidad e impacto.']),
+   ]},
+  {id:'proyectos',cat:'empresa',icon:'📋',title:'IA aplicada a la gestión de proyectos',
+   desc:'Identifica oportunidades de la IA para optimizar planificación, seguimiento y entrega de proyectos.',
+   finalidad:'Identificar aplicaciones y oportunidades de la IA en la planificación, seguimiento, coordinación y toma de decisiones en proyectos.',
+   topics:[
+    mkSpec(3,'Aplicaciones actuales de la IA en la gestión de proyectos',
+     'Muestra en qué procesos se aplica la IA: estimación, planificación, seguimiento, control, gestión de riesgos, reporting y coordinación de equipos.',
+     ['Identificar las principales áreas de aplicación de la IA en gestión de proyectos.','Reconocer procesos de planificación, seguimiento y control donde la IA genera valor.','Analizar ejemplos representativos en dirección de proyectos.'],
+     ['Ámbitos de aplicación de la IA en gestión de proyectos.','Procesos de planificación, seguimiento y control con IA.','Ejemplos en contextos reales de dirección de proyectos.','Beneficios de la IA en gestión de proyectos.','Tendencias de adopción en entornos de proyecto.']),
+    mkSpec(4,'Oportunidades y casos de uso de la IA en gestión de proyectos',
+     'Casos para mostrar cómo la IA puede apoyar la estimación, priorización, anticipación de riesgos, generación de documentación y seguimiento del avance.',
+     ['Identificar oportunidades de la IA en gestión de proyectos.','Analizar casos en planificación, riesgos, seguimiento y reporting.','Valorar el potencial de la IA para mejorar coordinación y eficiencia.'],
+     ['Identificación de oportunidades de la IA en proyectos.','Caso: estimación, planificación y priorización.','Caso: seguimiento, riesgos y alertas de proyecto.','Caso: documentación, reporting y apoyo al jefe de proyecto.','Condiciones de viabilidad e impacto.']),
+   ]},
+  {id:'industria',cat:'operacion',icon:'🏭',title:'IA aplicada a la industria',
+   desc:'Explora la IA en procesos industriales, mantenimiento predictivo y optimización de operaciones.',
+   finalidad:'Identificar aplicaciones y oportunidades de la IA en procesos industriales, manufactura y entornos de Industria 4.0.',
+   topics:[
+    mkSpec(3,'Aplicaciones actuales de la IA en procesos industriales',
+     'Muestra en qué ámbitos se aplica la IA: analítica avanzada, automatización, mantenimiento inteligente y optimización de operaciones en planta.',
+     ['Identificar las principales áreas de aplicación de la IA en procesos industriales.','Reconocer procesos donde la IA genera valor mediante análisis y automatización.','Analizar ejemplos en producción, mantenimiento y control industrial.'],
+     ['Ámbitos de aplicación de la IA en procesos industriales.','Procesos y funciones industriales donde la IA genera valor.','Ejemplos en contextos industriales reales.','Beneficios de la IA en el entorno industrial.','Tendencias de adopción de IA en la industria.']),
+    mkSpec(4,'Oportunidades y casos de uso de la IA en procesos industriales',
+     'Casos de uso para mostrar cómo la IA responde a necesidades de producción, mantenimiento, calidad, planificación y mejora continua.',
+     ['Identificar oportunidades de la IA en procesos industriales.','Analizar casos comprendiendo el problema, el valor y los resultados.','Valorar el potencial de la IA en producción, mantenimiento y operación.'],
+     ['Identificación de oportunidades de la IA en industria.','Caso: mantenimiento predictivo y monitorización de activos.','Caso: inspección visual y control inteligente de calidad.','Caso: optimización de la producción, planificación y recursos.','Condiciones de viabilidad e impacto.']),
+   ]},
+  {id:'programacion',cat:'operacion',icon:'💻',title:'IA aplicada a la programación',
+   desc:'Conoce cómo la IA transforma el desarrollo de software, la generación de código y el trabajo del programador.',
+   finalidad:'Identificar aplicaciones y oportunidades de la IA en el ciclo de vida del software: desarrollo, pruebas, documentación y mantenimiento.',
+   topics:[
+    mkSpec(3,'Aplicaciones actuales de la IA en programación y desarrollo de software',
+     'Muestra en qué tareas del ciclo de vida del software se aplica la IA: desarrollo, pruebas, documentación técnica, mantenimiento y soporte al conocimiento del equipo.',
+     ['Identificar las principales áreas de aplicación de la IA en programación.','Reconocer tareas de desarrollo, pruebas y documentación donde la IA genera valor.','Analizar ejemplos en ingeniería de software.'],
+     ['Ámbitos de aplicación de la IA en el ciclo de vida del software.','Procesos de desarrollo, pruebas y mantenimiento con IA.','Ejemplos en contextos reales de desarrollo.','Beneficios de la IA en programación.','Tendencias de adopción de IA en desarrollo de software.']),
+    mkSpec(4,'Oportunidades y casos de uso de la IA en programación',
+     'Casos para mostrar cómo la IA puede apoyar la generación de código, validación, documentación y mantenimiento evolutivo del software.',
+     ['Identificar oportunidades de la IA en programación.','Analizar casos en desarrollo asistido, pruebas y mantenimiento.','Valorar el potencial de la IA para mejorar productividad y calidad.'],
+     ['Identificación de oportunidades de la IA en programación.','Caso: asistencia al desarrollo y generación de código.','Caso: pruebas, depuración y aseguramiento de la calidad.','Caso: documentación, mantenimiento y soporte técnico.','Condiciones de viabilidad e impacto.']),
+   ]},
+  {id:'automatizacion',cat:'operacion',icon:'⚙️',title:'IA aplicada a la automatización',
+   desc:'Descubre cómo los sistemas inteligentes automatizan tareas complejas y rediseñan flujos de trabajo.',
+   finalidad:'Identificar aplicaciones y oportunidades de la IA en la automatización de procesos, la orquestación de tareas y la mejora de la eficiencia operativa.',
+   topics:[
+    mkSpec(3,'Aplicaciones actuales de la IA en automatización de procesos',
+     'Muestra en qué procesos se aplica la IA para automatizar actividades, interpretar información, coordinar flujos y apoyar decisiones en contextos operativos y administrativos.',
+     ['Identificar las principales áreas de aplicación de la IA en automatización.','Reconocer procesos donde la IA genera valor mediante automatización inteligente.','Analizar ejemplos representativos de automatización con IA.'],
+     ['Ámbitos de aplicación de la IA en automatización de procesos.','Procesos operativos y administrativos donde la IA genera valor.','Ejemplos de uso en automatización inteligente.','Beneficios de la IA en automatización.','Tendencias de adopción de IA en automatización.']),
+    mkSpec(4,'Oportunidades y casos de uso de la IA en automatización',
+     'Casos para mostrar cómo la IA puede incorporarse a la automatización documental, orquestación de tareas, gestión de flujos y soporte a decisiones.',
+     ['Identificar oportunidades de la IA en automatización.','Analizar casos en automatización documental, workflows y soporte a decisiones.','Valorar el potencial de la IA para incrementar eficiencia y calidad operativa.'],
+     ['Identificación de oportunidades de la IA en automatización.','Caso: automatización documental y tratamiento inteligente de información.','Caso: orquestación de tareas y flujos de trabajo.','Caso: soporte automatizado a decisiones y atención interna o externa.','Condiciones de viabilidad e impacto.']),
+   ]},
+  {id:'datos',cat:'operacion',icon:'📊',title:'IA aplicada al análisis de datos',
+   desc:'Aprende a identificar cómo la IA potencia el análisis de datos para extraer valor y apoyar decisiones.',
+   finalidad:'Identificar aplicaciones y oportunidades de la IA en la exploración, modelado, interpretación y explotación del dato para apoyar decisiones.',
+   topics:[
+    mkSpec(3,'Aplicaciones actuales de la IA en análisis de datos',
+     'Muestra en qué fases del análisis de datos se aplica la IA: exploración, segmentación, predicción, detección de patrones, generación de insights y monitorización analítica.',
+     ['Identificar las principales áreas de aplicación de la IA en análisis de datos.','Reconocer procesos de exploración, modelado y explotación donde la IA genera valor.','Analizar ejemplos representativos en analítica.'],
+     ['Ámbitos de aplicación de la IA en análisis de datos.','Procesos de exploración, modelado y explotación donde la IA genera valor.','Ejemplos de uso en contextos reales de analítica.','Beneficios de la IA en el análisis de datos.','Tendencias de adopción de IA en analítica.']),
+    mkSpec(4,'Oportunidades y casos de uso de la IA en análisis de datos',
+     'Casos para mostrar cómo la IA puede facilitar la predicción, detección de anomalías, automatización del análisis y obtención de conocimiento accionable.',
+     ['Identificar oportunidades de la IA en análisis de datos.','Analizar casos en predicción, segmentación, patrones e insights.','Valorar el potencial de la IA para mejorar la capacidad analítica.'],
+     ['Identificación de oportunidades de la IA en análisis de datos.','Caso: segmentación, predicción y detección de patrones.','Caso: análisis automatizado y generación de insights.','Caso: calidad del dato, detección de anomalías y monitorización.','Condiciones de viabilidad e impacto.']),
+   ]},
+  {id:'aapp',cat:'publico',icon:'🏛️',title:'IA aplicada a las AAPP',
+   desc:'Examina el impacto de la IA en la administración pública, servicios ciudadanos y eficiencia institucional.',
+   finalidad:'Identificar aplicaciones y oportunidades de la IA en servicios públicos, gestión administrativa y mejora de la acción pública.',
+   topics:[
+    mkSpec(3,'Aplicaciones actuales de la IA en las administraciones públicas',
+     'Muestra en qué ámbitos se aplica la IA: atención ciudadana, tramitación, análisis de información, asignación de recursos y seguimiento de servicios.',
+     ['Identificar las principales áreas de aplicación de la IA en las AAPP.','Reconocer procesos de atención ciudadana y gestión pública donde la IA genera valor.','Analizar ejemplos en servicios públicos y gestión administrativa.'],
+     ['Ámbitos de aplicación de la IA en las AAPP.','Procesos y funciones públicas donde la IA genera valor.','Ejemplos de uso en servicios públicos y gestión administrativa.','Beneficios de la IA en la acción pública.','Tendencias de adopción de IA en administraciones públicas.']),
+    mkSpec(4,'Oportunidades y casos de uso de la IA en las AAPP',
+     'Casos para mostrar cómo la IA puede apoyar la relación con la ciudadanía, la eficiencia administrativa, priorización de actuaciones y evaluación de servicios.',
+     ['Identificar oportunidades de la IA en las AAPP.','Analizar casos en atención ciudadana, análisis y gestión pública.','Valorar el potencial de la IA para mejorar la eficiencia y el servicio público.'],
+     ['Identificación de oportunidades de la IA en las AAPP.','Caso: atención ciudadana y tramitación administrativa.','Caso: análisis, priorización y asignación de recursos públicos.','Caso: supervisión, seguimiento y evaluación de políticas o servicios.','Condiciones de viabilidad e impacto en el sector público.']),
+   ]},
+  {id:'social',cat:'publico',icon:'🤝',title:'IA aplicada al bien social',
+   desc:'Comprende cómo la IA aborda retos sociales, mejora la inclusión y genera impacto positivo en la sociedad.',
+   finalidad:'Identificar aplicaciones y oportunidades de la IA en proyectos de impacto social, intervención, acompañamiento y evaluación de programas.',
+   topics:[
+    mkSpec(3,'Aplicaciones actuales de la IA en proyectos de bien social',
+     'Muestra en qué ámbitos se aplica la IA: detección de necesidades, segmentación de colectivos, personalización de intervenciones y evaluación de impacto.',
+     ['Identificar las principales áreas de aplicación de la IA en bien social.','Reconocer procesos de intervención, seguimiento y evaluación donde la IA genera valor.','Analizar ejemplos representativos de impacto social.'],
+     ['Ámbitos de aplicación de la IA en proyectos de bien social.','Procesos de intervención, seguimiento y evaluación con IA.','Ejemplos en contextos reales de impacto social.','Beneficios de la IA en bien social.','Tendencias de adopción de IA en iniciativas de impacto social.']),
+    mkSpec(4,'Oportunidades y casos de uso de la IA en proyectos de bien social',
+     'Casos para mostrar cómo la IA puede apoyar la detección de necesidades, personalización del acompañamiento y medición del impacto social.',
+     ['Identificar oportunidades de la IA en bien social.','Analizar casos en intervención, acompañamiento y evaluación de impacto.','Valorar el potencial de la IA para mejorar eficacia y seguimiento de acciones sociales.'],
+     ['Identificación de oportunidades de la IA en bien social.','Caso: detección y priorización de necesidades sociales.','Caso: personalización del acompañamiento o la intervención.','Caso: evaluación de programas y medición de impacto.','Condiciones de viabilidad e impacto en el ámbito social.']),
+   ]},
+  {id:'salud',cat:'publico',icon:'🏥',title:'IA aplicada a la salud',
+   desc:'Identifica las principales aplicaciones de la IA en el sector sanitario: diagnóstico, gestión e investigación.',
+   finalidad:'Identificar aplicaciones y oportunidades de la IA en la asistencia, prevención, gestión sanitaria y apoyo a la decisión clínica y organizativa.',
+   topics:[
+    mkSpec(3,'Aplicaciones actuales de la IA en salud',
+     'Muestra en qué ámbitos se aplica la IA: apoyo al diagnóstico, seguimiento de pacientes, gestión clínica, organización de recursos y mejora de la eficiencia asistencial.',
+     ['Identificar las principales áreas de aplicación de la IA en salud.','Reconocer procesos asistenciales, diagnósticos y de gestión donde la IA genera valor.','Analizar ejemplos representativos en contextos sanitarios.'],
+     ['Ámbitos de aplicación de la IA en entornos sanitarios.','Procesos asistenciales, diagnósticos y de gestión donde la IA genera valor.','Ejemplos en contextos sanitarios reales.','Beneficios de la IA en salud.','Tendencias de adopción de IA en el ámbito sanitario.']),
+    mkSpec(4,'Oportunidades y casos de uso de la IA en salud',
+     'Casos para mostrar cómo la IA puede apoyar la interpretación clínica, seguimiento de pacientes, estratificación de riesgo y optimización de servicios sanitarios.',
+     ['Identificar oportunidades de la IA en salud.','Analizar casos en apoyo al diagnóstico, seguimiento y gestión sanitaria.','Valorar el potencial de la IA para mejorar calidad asistencial y anticipación.'],
+     ['Identificación de oportunidades de la IA en salud.','Caso: apoyo al diagnóstico y la interpretación clínica.','Caso: seguimiento de pacientes y estratificación de riesgo.','Caso: gestión operativa y optimización de servicios sanitarios.','Condiciones de viabilidad e impacto en entornos sanitarios.']),
+   ]},
+  {id:'diseno',cat:'creatividad',icon:'🎨',title:'IA aplicada al diseño',
+   desc:'Explora cómo la IA generativa está redefiniendo los procesos creativos y el trabajo del diseñador.',
+   finalidad:'Identificar aplicaciones y oportunidades de la IA en procesos de ideación, creación, prototipado, validación y personalización de propuestas de diseño.',
+   topics:[
+    mkSpec(3,'Aplicaciones actuales de la IA en diseño',
+     'Muestra en qué fases del proceso de diseño se aplica la IA: ideación, generación de propuestas, adaptación de piezas, investigación de usuarios y personalización creativa.',
+     ['Identificar las principales áreas de aplicación de la IA en diseño.','Reconocer procesos de ideación, prototipado y producción donde la IA genera valor.','Analizar ejemplos en contextos reales de diseño.'],
+     ['Ámbitos de aplicación de la IA en procesos de diseño.','Procesos de ideación, prototipado y producción donde la IA genera valor.','Ejemplos en contextos reales de diseño.','Beneficios de la IA en el ámbito del diseño.','Tendencias de adopción de IA en procesos creativos.']),
+    mkSpec(4,'Oportunidades y casos de uso de la IA en diseño',
+     'Casos para mostrar cómo la IA puede apoyar la exploración creativa, generación de piezas y validación de propuestas con criterios de usuario y contexto.',
+     ['Identificar oportunidades de la IA en diseño.','Analizar casos en ideación, producción creativa y personalización.','Valorar el potencial de la IA para ampliar opciones creativas.'],
+     ['Identificación de oportunidades de la IA en diseño.','Caso: ideación y exploración creativa asistida.','Caso: generación y adaptación de piezas y contenidos.','Caso: personalización, validación y mejora de propuestas.','Condiciones de viabilidad e impacto en diseño.']),
+   ]},
+  {id:'deporte',cat:'creatividad',icon:'⚽',title:'IA aplicada al deporte',
+   desc:'Conoce el papel de la IA en el rendimiento deportivo, análisis de datos y gestión de organizaciones.',
+   finalidad:'Identificar aplicaciones y oportunidades de la IA en entrenamiento, rendimiento, salud, gestión deportiva y experiencia del aficionado.',
+   topics:[
+    mkSpec(3,'Aplicaciones actuales de la IA en el deporte',
+     'Muestra en qué ámbitos se aplica la IA: análisis de rendimiento, monitorización, prevención de lesiones, preparación competitiva, gestión deportiva y relación con aficionados.',
+     ['Identificar las principales áreas de aplicación de la IA en el deporte.','Reconocer procesos de entrenamiento, rendimiento y gestión donde la IA genera valor.','Analizar ejemplos en contextos deportivos reales.'],
+     ['Ámbitos de aplicación de la IA en el deporte.','Procesos de entrenamiento, rendimiento, salud y gestión deportiva con IA.','Ejemplos en contextos deportivos reales.','Beneficios de la IA en el ámbito deportivo.','Tendencias de adopción de IA en deporte.']),
+    mkSpec(4,'Oportunidades y casos de uso de la IA en el deporte',
+     'Casos para mostrar cómo la IA puede apoyar el análisis de rendimiento, prevención de lesiones, gestión de cargas y toma de decisiones deportivas.',
+     ['Identificar oportunidades de la IA en el deporte.','Analizar casos en rendimiento, salud y gestión deportiva.','Valorar el potencial de la IA para mejorar preparación y toma de decisiones.'],
+     ['Identificación de oportunidades de la IA en el deporte.','Caso: análisis de rendimiento y preparación deportiva.','Caso: prevención de lesiones y gestión de cargas.','Caso: gestión deportiva, experiencia del aficionado y soporte a decisiones.','Condiciones de viabilidad e impacto en el ámbito deportivo.']),
+   ]},
+  {id:'logistica',cat:'creatividad',icon:'🚚',title:'IA aplicada a la logística',
+   desc:'Analiza cómo la IA optimiza cadenas de suministro, rutas, almacenes y procesos de distribución.',
+   finalidad:'Identificar aplicaciones y oportunidades de la IA en previsión, inventario, transporte, almacén y gestión de la cadena de suministro.',
+   topics:[
+    mkSpec(3,'Aplicaciones actuales de la IA en logística',
+     'Muestra en qué ámbitos se aplica la IA: previsión de demanda, planificación de inventarios, optimización de rutas, operaciones de almacén y visibilidad de la cadena.',
+     ['Identificar las principales áreas de aplicación de la IA en logística.','Reconocer procesos de previsión, inventario, transporte y almacén donde la IA genera valor.','Analizar ejemplos representativos en logística.'],
+     ['Ámbitos de aplicación de la IA en logística y cadena de suministro.','Procesos de previsión, inventario, transporte y almacén con IA.','Ejemplos en contextos logísticos reales.','Beneficios de la IA en logística.','Tendencias de adopción de IA en logística y supply chain.']),
+    mkSpec(4,'Oportunidades y casos de uso de la IA en logística',
+     'Casos para mostrar cómo la IA puede apoyar la previsión de demanda, optimización del transporte, operación de almacenes y mejora de la visibilidad de la cadena.',
+     ['Identificar oportunidades de la IA en logística.','Analizar casos en previsión, transporte, almacén y cadena de suministro.','Valorar el potencial de la IA para mejorar eficiencia y anticipación en logística.'],
+     ['Identificación de oportunidades de la IA en logística.','Caso: previsión de demanda y planificación de inventarios.','Caso: optimización de rutas, transporte y distribución.','Caso: operaciones de almacén y visibilidad de la cadena de suministro.','Condiciones de viabilidad e impacto en entornos logísticos.']),
+   ]},
+];
+
+const PLAN_GENERIC=[...COMMON,
+  mkSpec(3,'Aplicaciones actuales de la IA en [sector]',
+   'Muestra en qué ámbitos, procesos y funciones se aplica actualmente la IA en el sector correspondiente, ofreciendo una visión estructurada de sus posibilidades.',
+   ['Identificar las principales áreas de aplicación de la IA en el sector.','Reconocer procesos y funciones donde la IA genera valor.','Analizar ejemplos representativos en el ámbito profesional.'],
+   ['Principales ámbitos de aplicación de la IA en el sector.','Procesos, funciones y actividades donde la IA genera valor.','Ejemplos en organizaciones y contextos reales.','Beneficios en eficiencia, calidad y toma de decisiones.','Tendencias actuales de adopción en el sector.']),
+  mkSpec(4,'Casos de uso prácticos de la IA en [sector]',
+   'Se seleccionan dos o tres casos de uso representativos para desarrollarlos con mayor detalle mediante ejemplos, supuestos y prácticas guiadas.',
+   ['Identificar oportunidades concretas de la IA en el sector.','Analizar casos comprendiendo el problema, el valor y los resultados.','Valorar el potencial de la IA para responder a necesidades reales.'],
+   ['Análisis de dos o tres casos de uso representativos.','Desarrollo práctico de los casos seleccionados.','Valor aportado: mejora de procesos, apoyo a la decisión e innovación.','Condiciones básicas para la aplicación efectiva de la IA.','Reflexión práctica sobre el potencial ante retos concretos.']),
+];
+
+/* ── TOPIC DETAIL (inside modal, two cols on desktop, stacked on mobile) ── */
+function TopicDetail({topic,isMobile,index}){
+  const ac=topic.accent;
+  const isCommon=topic.num<=2;
+  return(
+    <div style={{border:`1px solid ${topic.border}`,borderRadius:10,background:'#fff',overflow:'hidden',
+      animation:'accordOpen 0.32s ease both',animationDelay:`${index*0.07}s`,
+      boxShadow:'0 2px 10px rgba(0,0,0,0.05)'}}>
+      {/* header */}
+      <div style={{background:topic.bg,padding:'13px 16px',display:'flex',alignItems:'flex-start',gap:12,
+        borderBottom:`1px solid ${topic.border}`}}>
+        <div style={{width:32,height:32,borderRadius:'50%',background:ac,color:'#fff',
+          display:'flex',alignItems:'center',justifyContent:'center',
+          fontSize:13,fontWeight:700,flexShrink:0,fontFamily:'Merriweather,serif'}}>{topic.num}</div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.07em',textTransform:'uppercase',
+            color:ac,marginBottom:2}}>{topic.label} · {topic.tag}</div>
+          <div style={{fontSize:isMobile?13:14,fontWeight:700,color:C.text,lineHeight:1.3,
+            fontFamily:'Merriweather,serif'}}>{topic.title}</div>
+        </div>
+      </div>
+      {/* enfoque */}
+      <div style={{padding:'11px 16px',background:isCommon?'#fffdf5':'#fffafa',
+        borderBottom:`1px solid ${topic.border}`}}>
+        <span style={{fontSize:10,fontWeight:700,letterSpacing:'0.07em',textTransform:'uppercase',
+          color:ac,marginRight:8}}>Enfoque</span>
+        <span style={{fontSize:12.5,color:C.muted,lineHeight:1.65}}>{topic.enfoque}</span>
+      </div>
+      {/* two cols — stacked on mobile */}
+      <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr',gap:0}}>
+        {/* resultados */}
+        <div style={{padding:'14px 16px',borderRight:isMobile?'none':`1px solid ${C.border}`,
+          borderBottom:isMobile?`1px solid ${C.border}`:'none'}}>
+          <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.07em',textTransform:'uppercase',
+            color:ac,marginBottom:10,display:'flex',alignItems:'center',gap:6}}>
+            <span style={{width:16,height:16,borderRadius:'50%',background:ac,display:'inline-flex',
+              alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              <svg width="8" height="8" viewBox="0 0 10 10" fill="none">
+                <path d="M2 5l2.5 2.5L8 3" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </span>
+            Resultados de aprendizaje
+          </div>
+          <ul style={{listStyle:'none',padding:0,margin:0}}>
+            {topic.resultados.map((r,i)=>(
+              <li key={i} style={{display:'flex',gap:8,padding:'5px 0',
+                borderBottom:i<topic.resultados.length-1?`1px solid ${C.border}`:'none'}}>
+                <span style={{width:5,height:5,borderRadius:'50%',background:ac,flexShrink:0,marginTop:7}}/>
+                <span style={{fontSize:12.5,color:C.text,lineHeight:1.55}}>{r}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        {/* contenidos */}
+        <div style={{padding:'14px 16px',background:'#f9fafb'}}>
+          <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.07em',textTransform:'uppercase',
+            color:ac,marginBottom:10,display:'flex',alignItems:'center',gap:6}}>
+            <span style={{width:16,height:16,borderRadius:'50%',background:ac,display:'inline-flex',
+              alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              <svg width="8" height="8" viewBox="0 0 10 10" fill="none">
+                <path d="M2.5 2h5M2.5 5h5M2.5 8h3" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            </span>
+            Contenidos orientativos
+          </div>
+          <ol style={{padding:0,margin:0,listStyle:'none'}}>
+            {topic.contenidos.map((c,i)=>(
+              <li key={i} style={{display:'flex',gap:8,padding:'5px 0',
+                borderBottom:i<topic.contenidos.length-1?`1px solid ${C.border}`:'none'}}>
+                <span style={{fontFamily:'Merriweather,serif',fontSize:11,fontWeight:700,
+                  color:ac,flexShrink:0,minWidth:16,lineHeight:1.55}}>{i+1}.</span>
+                <span style={{fontSize:12.5,color:C.text,lineHeight:1.55}}>{c}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── COURSE MODAL ─────────────────────────────────────────── */
+function CourseModal({course,onClose,isMobile}){
+  const cat=CAT[course.cat];
+  const allTopics=[...COMMON,...course.topics];
+  const [tab,setTab]=useState('programa');
+
+  useEffect(()=>{
+    document.body.style.overflow='hidden';
+    const h=e=>{if(e.key==='Escape')onClose();};
+    window.addEventListener('keydown',h);
+    return()=>{document.body.style.overflow='';window.removeEventListener('keydown',h);};
+  },[onClose]);
+
+  return(
+    <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:1000,
+      background:'rgba(8,16,36,0.8)',display:'flex',alignItems:'flex-start',
+      justifyContent:'center',padding:isMobile?'0':'24px 16px',
+      overflowY:'auto',animation:'fadeIn 0.18s ease'}}>
+      <div onClick={e=>e.stopPropagation()} style={{
+        width:'100%',maxWidth:920,
+        borderRadius:isMobile?0:12,
+        overflow:'hidden',
+        boxShadow:'0 32px 100px rgba(0,0,0,0.45)',
+        animation:'modalDrop 0.28s cubic-bezier(0.34,1.2,0.64,1)',
+        marginBottom:isMobile?0:32,
+        minHeight:isMobile?'100dvh':'auto',
+        display:'flex',flexDirection:'column',
+      }}>
+        {/* HEADER */}
+        <div style={{background:`linear-gradient(110deg,${C.navy} 0%,${C.navyMid} 55%,${C.navyLight} 100%)`,
+          color:'#fff',position:'relative',flexShrink:0}}>
+          <div style={{position:'absolute',top:0,left:0,right:0,height:3,
+            background:`linear-gradient(90deg,${C.orange},${C.red})`}}/>
+          {/* top bar */}
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
+            padding:'14px 16px 0'}}>
+            <span style={{fontSize:10,fontWeight:700,letterSpacing:'0.07em',textTransform:'uppercase',
+              background:cat.pillBg,color:cat.pill,padding:'3px 12px',borderRadius:20}}>{cat.label}</span>
+            <button onClick={onClose} style={{background:'rgba(255,255,255,0.12)',border:'none',
+              color:'#fff',width:34,height:34,borderRadius:'50%',cursor:'pointer',
+              fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>✕</button>
+          </div>
+          {/* title */}
+          <div style={{padding:'12px 16px 0',display:'flex',gap:14,alignItems:'flex-start'}}>
+            {!isMobile&&<span style={{fontSize:44,flexShrink:0,lineHeight:1}}>{course.icon}</span>}
+            <div>
+              {isMobile&&<span style={{fontSize:30,display:'block',marginBottom:6}}>{course.icon}</span>}
+              <h2 style={{fontFamily:'Merriweather,serif',fontSize:isMobile?18:22,fontWeight:900,
+                lineHeight:1.25,color:'#fff',margin:'0 0 8px'}}>{course.title}</h2>
+              <p style={{color:'rgba(255,255,255,0.7)',fontSize:13,lineHeight:1.65,margin:0}}>{course.finalidad}</p>
+            </div>
+          </div>
+          {/* badges */}
+          <div style={{display:'flex',gap:6,padding:'12px 16px',flexWrap:'wrap'}}>
+            {['1–1,5 ECTS','Aplicado','Online','Sin requisitos técnicos'].map(b=>(
+              <span key={b} style={{fontSize:11,background:'rgba(255,255,255,0.1)',
+                border:'1px solid rgba(255,255,255,0.18)',borderRadius:4,
+                padding:'3px 10px',color:'rgba(255,255,255,0.88)'}}>{b}</span>
+            ))}
+          </div>
+          {/* tabs */}
+          <div style={{display:'flex',borderTop:'1px solid rgba(255,255,255,0.12)'}}>
+            {[{k:'programa',l:'Plan de estudios'},{k:'info',l:'Información'}].map(t=>(
+              <button key={t.k} onClick={()=>setTab(t.k)} style={{
+                padding:'12px 20px',border:'none',cursor:'pointer',
+                fontSize:13,fontWeight:600,background:'transparent',
+                color:tab===t.k?'#fff':'rgba(255,255,255,0.5)',
+                borderBottom:tab===t.k?`3px solid ${C.orange}`:'3px solid transparent',
+                fontFamily:'Open Sans,sans-serif',transition:'color 0.2s',whiteSpace:'nowrap',
+              }}>{t.l}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* BODY */}
+        <div style={{background:'#f4f5f7',flex:1,overflowY:'auto'}}>
+          {tab==='programa'&&(
+            <div style={{padding:'16px',display:'flex',flexDirection:'column',gap:12}}>
+              <div style={{display:'flex',gap:12,fontSize:11,color:C.muted,flexWrap:'wrap'}}>
+                {[{l:'Temas comunes',bg:C.commonBg,b:C.commonBorder},
+                  {l:'Temas específicos',bg:C.specBg,b:C.specBorder}].map(x=>(
+                  <span key={x.l} style={{display:'flex',alignItems:'center',gap:5}}>
+                    <span style={{width:12,height:12,borderRadius:2,background:x.bg,
+                      border:`1.5px solid ${x.b}`,display:'inline-block',flexShrink:0}}/>
+                    {x.l}
+                  </span>
+                ))}
+              </div>
+              {allTopics.map((t,i)=>(
+                <TopicDetail key={t.num} topic={t} isMobile={isMobile} index={i}/>
+              ))}
+            </div>
+          )}
+          {tab==='info'&&(
+            <div style={{padding:'16px'}}>
+              <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr',gap:12}}>
+                {[
+                  {icon:'🎯',label:'Carácter',val:'Iniciación · Orientación aplicada'},
+                  {icon:'👥',label:'Dirigido a',val:'Profesionales de cualquier sector, sin conocimientos técnicos previos'},
+                  {icon:'📅',label:'Duración',val:'1 – 1,5 ECTS (25 – 37 h de dedicación)'},
+                  {icon:'🌐',label:'Modalidad',val:'100% online · Flexible'},
+                  {icon:'📚',label:'Estructura',val:'4 temas (2 comunes + 2 específicos)'},
+                  {icon:'🔗',label:'Continuidad',val:'Puerta de entrada a programas de Máster en IA'},
+                ].map(x=>(
+                  <div key={x.label} style={{background:'#fff',border:`1px solid ${C.border}`,
+                    borderRadius:8,padding:'14px 16px',display:'flex',gap:12,alignItems:'flex-start'}}>
+                    <span style={{fontSize:20,flexShrink:0}}>{x.icon}</span>
+                    <div>
+                      <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.07em',
+                        textTransform:'uppercase',color:C.light,marginBottom:3}}>{x.label}</div>
+                      <div style={{fontSize:13,color:C.text,lineHeight:1.5}}>{x.val}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* FOOTER */}
+        <div style={{background:'#fff',borderTop:`1px solid ${C.border}`,
+          padding:'14px 16px',display:'flex',alignItems:'center',
+          justifyContent:'space-between',gap:12,flexShrink:0,flexWrap:'wrap'}}>
+          <p style={{margin:0,fontSize:12,color:C.muted,flex:1}}>¿Te interesa este microcurso? Solicita información sin compromiso.</p>
+          <a href="mailto:informacion@esit.es" style={{background:C.red,color:'#fff',
+            padding:'11px 22px',borderRadius:5,textDecoration:'none',
+            fontSize:13,fontWeight:700,flexShrink:0,whiteSpace:'nowrap'}}>Solicitar información</a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── COURSE CARD ──────────────────────────────────────────── */
+function CourseCard({course,onOpen,index}){
+  const cat=CAT[course.cat];
+  const [hov,setHov]=useState(false);
+  return(
+    <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+      onClick={()=>onOpen(course)}
+      style={{background:'#fff',borderRadius:8,border:`1px solid ${hov?'#b0bcd4':C.border}`,
+        display:'flex',flexDirection:'column',cursor:'pointer',overflow:'hidden',
+        transition:'box-shadow 0.22s,transform 0.18s,border-color 0.18s',
+        boxShadow:hov?'0 8px 28px rgba(10,22,40,0.13)':'0 1px 4px rgba(0,0,0,0.04)',
+        transform:hov?'translateY(-3px)':'translateY(0)',
+        animation:'fadeUp 0.4s ease both',animationDelay:`${index*0.05}s`,
+      }}>
+      <div style={{height:4,background:hov?C.red:C.navyLight,transition:'background 0.2s'}}/>
+      <div style={{padding:'16px 16px 12px',flex:1}}>
+        <div style={{display:'flex',alignItems:'flex-start',gap:8,marginBottom:8}}>
+          <span style={{fontSize:22,flexShrink:0}}>{course.icon}</span>
+          <span style={{fontSize:10,fontWeight:700,letterSpacing:'0.06em',textTransform:'uppercase',
+            padding:'3px 8px',borderRadius:3,background:cat.pillBg,color:cat.pill,
+            marginTop:3,lineHeight:1.4}}>{cat.label}</span>
+        </div>
+        <h3 style={{fontFamily:'Merriweather,serif',fontSize:14,fontWeight:700,color:C.text,
+          lineHeight:1.35,margin:'0 0 6px'}}>{course.title}</h3>
+        <p style={{fontSize:13,color:C.muted,lineHeight:1.6,margin:0}}>{course.desc}</p>
+      </div>
+      <div style={{padding:'10px 16px',borderTop:`1px solid ${C.border}`,display:'flex',
+        alignItems:'center',justifyContent:'space-between',background:'#f9fafb'}}>
+        <span style={{fontSize:12,color:C.light}}><strong style={{color:C.text,fontSize:13}}>1–1,5</strong> ECTS · 4 temas</span>
+        <span style={{fontSize:12,color:hov?C.red:C.navyMid,fontWeight:700,transition:'color 0.2s'}}>Ver programa →</span>
+      </div>
+    </div>
+  );
+}
+
+/* ── PLAN ACCORDION ITEM ──────────────────────────────────── */
+function PlanItem({topic,isMobile,index}){
+  const [open,setOpen]=useState(false);
+  const isCommon=topic.num<=2;
+  const ac=topic.accent;
+  return(
+    <div style={{border:`1px solid ${C.border}`,borderRadius:8,overflow:'hidden',
+      animation:'fadeUp 0.4s ease both',animationDelay:`${index*0.06}s`,background:'#fff'}}>
+      <button onClick={()=>setOpen(o=>!o)} style={{width:'100%',padding:'13px 16px',
+        display:'flex',alignItems:'center',gap:12,background:'none',border:'none',
+        cursor:'pointer',textAlign:'left',fontFamily:'Open Sans,sans-serif'}}>
+        <div style={{width:30,height:30,borderRadius:'50%',background:ac,color:'#fff',
+          display:'flex',alignItems:'center',justifyContent:'center',
+          fontSize:12,fontWeight:700,flexShrink:0,fontFamily:'Merriweather,serif'}}>{topic.num}</div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.07em',textTransform:'uppercase',
+            color:ac,marginBottom:1}}>{topic.label} · {isCommon?'Común a todos':'Específico por sector'}</div>
+          <div style={{fontSize:isMobile?13:14,fontWeight:700,color:C.text,lineHeight:1.3,
+            fontFamily:'Merriweather,serif'}}>{topic.title}</div>
+        </div>
+        <span style={{fontSize:20,color:ac,transition:'transform 0.22s',
+          transform:open?'rotate(90deg)':'rotate(0)',flexShrink:0}}>›</span>
+      </button>
+      {open&&(
+        <div style={{borderTop:`1px solid ${C.border}`,animation:'accordOpen 0.22s ease'}}>
+          <div style={{padding:'11px 16px',background:isCommon?'#fffdf5':'#fffafa',
+            borderBottom:`1px solid ${topic.border}`}}>
+            <p style={{fontSize:12.5,color:C.muted,lineHeight:1.65,borderLeft:`3px solid ${ac}`,
+              paddingLeft:10,fontStyle:'italic',margin:0}}>{topic.enfoque}</p>
+          </div>
+          {/* two cols stacked on mobile */}
+          <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr',gap:0,background:'#f9fafb'}}>
+            <div style={{padding:'13px 16px',background:'#fff',
+              borderRight:isMobile?'none':`1px solid ${C.border}`,
+              borderBottom:isMobile?`1px solid ${C.border}`:'none'}}>
+              <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.07em',textTransform:'uppercase',
+                color:ac,marginBottom:8}}>Resultados de aprendizaje</div>
+              <ul style={{listStyle:'none',padding:0,margin:0}}>
+                {topic.resultados.map((r,i)=>(
+                  <li key={i} style={{display:'flex',gap:8,padding:'4px 0',
+                    borderBottom:i<topic.resultados.length-1?`1px solid ${C.border}`:'none'}}>
+                    <span style={{width:5,height:5,borderRadius:'50%',background:ac,
+                      flexShrink:0,marginTop:7}}/>
+                    <span style={{fontSize:12,color:C.text,lineHeight:1.55}}>{r}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div style={{padding:'13px 16px'}}>
+              <div style={{fontSize:10,fontWeight:700,letterSpacing:'0.07em',textTransform:'uppercase',
+                color:ac,marginBottom:8}}>Contenidos orientativos</div>
+              <ol style={{padding:0,margin:0,listStyle:'none'}}>
+                {topic.contenidos.map((c,i)=>(
+                  <li key={i} style={{display:'flex',gap:8,padding:'4px 0',
+                    borderBottom:i<topic.contenidos.length-1?`1px solid ${C.border}`:'none'}}>
+                    <span style={{fontFamily:'Merriweather,serif',fontSize:11,fontWeight:700,
+                      color:ac,flexShrink:0,minWidth:16,lineHeight:1.55}}>{i+1}.</span>
+                    <span style={{fontSize:12,color:C.text,lineHeight:1.55}}>{c}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── SECTION HEADER ───────────────────────────────────────── */
+function SH({eyebrow,title,sub}){
+  return(
+    <div style={{marginBottom:'2rem'}}>
+      <div style={{display:'inline-flex',alignItems:'center',gap:7,marginBottom:'0.5rem'}}>
+        <span style={{width:20,height:3,background:C.orange,borderRadius:2,display:'inline-block'}}/>
+        <span style={{fontSize:'0.72rem',fontWeight:700,letterSpacing:'0.1em',
+          textTransform:'uppercase',color:C.orange}}>{eyebrow}</span>
+      </div>
+      <h2 style={{fontFamily:'Merriweather,serif',fontSize:'clamp(1.4rem,4vw,1.9rem)',
+        fontWeight:900,color:C.navy,marginBottom:'0.6rem',lineHeight:1.25}}>{title}</h2>
+      {sub&&<p style={{color:C.muted,fontSize:'0.94rem',lineHeight:1.7}}>{sub}</p>}
+    </div>
+  );
+}
+
+/* ── APP ──────────────────────────────────────────────────── */
+function App(){
+  const w=useWidth();
+  const isMobile=w<700;
+  const isTablet=w<1024;
+  const [filter,setFilter]=useState('all');
+  const [modal,setModal]=useState(null);
+  const [scrolled,setScrolled]=useState(false);
+  const [mobileMenuOpen,setMobileMenuOpen]=useState(false);
+
+  useEffect(()=>{
+    const fn=()=>setScrolled(window.scrollY>50);
+    window.addEventListener('scroll',fn);
+    return()=>window.removeEventListener('scroll',fn);
+  },[]);
+
+  const visible=filter==='all'?COURSES:COURSES.filter(c=>c.cat===filter);
+  const px=isMobile?'1rem':'2rem';
+
+  return(
+    <div style={{fontFamily:'Open Sans,sans-serif',color:C.text,background:'#fff',overflowX:'hidden'}}>
+
+      {/* ── NAV ── */}
+      <nav style={{background:scrolled?'#fff':C.navy,position:'sticky',top:0,zIndex:200,
+        boxShadow:scrolled?'0 2px 14px rgba(0,0,0,0.11)':'none',
+        transition:'background 0.28s,box-shadow 0.28s',
+        borderBottom:scrolled?`2px solid ${C.red}`:'none'}}>
+        <div style={{maxWidth:1200,margin:'0 auto',padding:`0 ${px}`,display:'flex',
+          alignItems:'center',justifyContent:'space-between',height:isMobile?56:64}}>
+          <a href="#" style={{fontFamily:'Merriweather,serif',fontSize:isMobile?17:20,fontWeight:900,
+            color:scrolled?C.navy:'#fff',textDecoration:'none',display:'flex',alignItems:'center',gap:8}}>
+            ESIT
+            <span style={{background:C.red,color:'#fff',fontSize:'0.55rem',fontWeight:700,
+              padding:'3px 7px',borderRadius:3,letterSpacing:'0.07em',textTransform:'uppercase'}}>IA</span>
+          </a>
+          {/* Desktop links */}
+          {!isMobile&&(
+            <div style={{display:'flex',alignItems:'center',gap:'1.4rem'}}>
+              {[['#microcursos','Microcursos'],['#plan','Plan de estudios'],['#metodologia','Metodología']].map(([h,l])=>(
+                <a key={h} href={h} style={{color:scrolled?C.muted:'rgba(255,255,255,0.78)',
+                  textDecoration:'none',fontSize:'0.86rem',fontWeight:600}}>{l}</a>
+              ))}
+              <a href="mailto:informacion@esit.es" style={{background:C.red,color:'#fff',
+                padding:'9px 18px',borderRadius:4,textDecoration:'none',
+                fontSize:'0.84rem',fontWeight:700}}>Solicitar información</a>
+            </div>
+          )}
+          {/* Mobile hamburger */}
+          {isMobile&&(
+            <button onClick={()=>setMobileMenuOpen(o=>!o)} style={{background:'none',border:'none',
+              cursor:'pointer',padding:6,display:'flex',flexDirection:'column',gap:5}}>
+              {[0,1,2].map(i=>(
+                <span key={i} style={{width:22,height:2,background:scrolled?C.navy:'#fff',
+                  display:'block',borderRadius:2,
+                  transform:mobileMenuOpen&&i===0?'rotate(45deg) translate(5px,5px)':
+                            mobileMenuOpen&&i===1?'scaleX(0)':
+                            mobileMenuOpen&&i===2?'rotate(-45deg) translate(5px,-5px)':'none',
+                  transition:'transform 0.2s,opacity 0.2s',
+                  opacity:mobileMenuOpen&&i===1?0:1}}/>
+              ))}
+            </button>
+          )}
+        </div>
+        {/* Mobile dropdown */}
+        {isMobile&&mobileMenuOpen&&(
+          <div style={{background:C.navy,padding:'1rem',borderTop:'1px solid rgba(255,255,255,0.1)',
+            animation:'fadeIn 0.18s ease'}}>
+            {[['#microcursos','Microcursos'],['#plan','Plan de estudios'],['#metodologia','Metodología']].map(([h,l])=>(
+              <a key={h} href={h} onClick={()=>setMobileMenuOpen(false)}
+                style={{display:'block',color:'rgba(255,255,255,0.85)',textDecoration:'none',
+                  padding:'11px 0',fontSize:'0.93rem',fontWeight:600,
+                  borderBottom:'1px solid rgba(255,255,255,0.08)'}}>{l}</a>
+            ))}
+            <a href="mailto:informacion@esit.es" style={{display:'block',background:C.red,
+              color:'#fff',padding:'12px',borderRadius:5,textDecoration:'none',
+              fontSize:'0.9rem',fontWeight:700,textAlign:'center',marginTop:12}}>Solicitar información</a>
+          </div>
+        )}
+      </nav>
+
+      {/* ── HERO ── */}
+      <section style={{background:`linear-gradient(120deg,${C.navy} 0%,${C.navyMid} 55%,${C.navyLight} 100%)`,
+        padding:isMobile?'48px 1rem 36px':'72px 2rem 60px',position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',inset:0,backgroundImage:`linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px)`,backgroundSize:'48px 48px'}}/>
+        <div style={{position:'absolute',top:0,left:0,right:0,height:4,
+          background:`linear-gradient(90deg,${C.orange},${C.red})`}}/>
+        <div style={{maxWidth:1200,margin:'0 auto',position:'relative',
+          display:'grid',gridTemplateColumns:isTablet?'1fr':'1fr 400px',gap:'3rem',alignItems:'center'}}>
+          <div style={{animation:'fadeUp 0.55s ease both'}}>
+            <div style={{display:'inline-flex',alignItems:'center',gap:7,
+              background:'rgba(245,130,13,0.15)',border:`1px solid rgba(245,130,13,0.3)`,
+              borderRadius:20,padding:'4px 12px',fontSize:'0.72rem',letterSpacing:'0.07em',
+              textTransform:'uppercase',color:C.orange,marginBottom:'1rem',fontWeight:700}}>
+              Formación Permanente · ESIT
+            </div>
+            <h1 style={{fontFamily:'Merriweather,serif',
+              fontSize:isMobile?'1.75rem':'clamp(1.9rem,3.8vw,2.7rem)',
+              fontWeight:900,color:'#fff',lineHeight:1.2,marginBottom:'1rem'}}>
+              Microcursos de <span style={{color:C.orange}}>Inteligencia Artificial</span> Aplicada
+            </h1>
+            <p style={{fontSize:isMobile?'0.93rem':'1rem',color:'rgba(255,255,255,0.75)',
+              lineHeight:1.75,marginBottom:'1.5rem',fontWeight:300,maxWidth:560}}>
+              Una familia de microcursos diseñada para profesionales de cualquier sector. Introducción rigurosa a la IA con aplicación directa al ámbito profesional. Sin requisitos técnicos previos.
+            </p>
+            <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:'1.5rem'}}>
+              {(isMobile
+                ?['1–1,5 ECTS','100% online','Sin requisitos']
+                :['1–1,5 ECTS por microcurso','Orientación aplicada','100% online','Sin conocimientos técnicos','Puerta al Máster']
+              ).map(b=>(
+                <span key={b} style={{background:'rgba(255,255,255,0.08)',
+                  border:'1px solid rgba(255,255,255,0.16)',borderRadius:4,
+                  padding:'4px 11px',fontSize:'0.78rem',color:'rgba(255,255,255,0.88)'}}>{b}</span>
+              ))}
+            </div>
+            <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
+              <a href="#microcursos" style={{background:C.red,color:'#fff',
+                padding:isMobile?'11px 20px':'13px 26px',borderRadius:5,
+                textDecoration:'none',fontWeight:700,fontSize:'0.9rem'}}>Ver microcursos</a>
+              <a href="#plan" style={{border:'2px solid rgba(255,255,255,0.28)',color:'#fff',
+                padding:isMobile?'11px 20px':'13px 26px',borderRadius:5,
+                textDecoration:'none',fontWeight:600,fontSize:'0.9rem'}}>Plan de estudios</a>
+            </div>
+          </div>
+          {/* Panel temario – hidden on mobile */}
+          {!isTablet&&(
+            <div style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',
+              borderRadius:12,overflow:'hidden',animation:'fadeUp 0.55s ease 0.15s both'}}>
+              <div style={{background:'rgba(245,130,13,0.12)',borderBottom:'1px solid rgba(245,130,13,0.22)',
+                padding:'12px 18px'}}>
+                <div style={{fontSize:11,fontWeight:700,letterSpacing:'0.08em',
+                  textTransform:'uppercase',color:C.orange}}>Arquitectura del temario</div>
+              </div>
+              {[{n:1,t:'Fundamentos de IA y su impacto profesional',common:true},
+                {n:2,t:'Funcionamiento de la IA: ML, redes neuronales e IA generativa',common:true},
+                {n:3,t:'Aplicaciones actuales de la IA en [sector]',common:false},
+                {n:4,t:'Casos de uso prácticos de la IA en [sector]',common:false},
+              ].map((t,i)=>(
+                <div key={t.n} style={{display:'flex',gap:13,alignItems:'flex-start',padding:'13px 18px',
+                  borderBottom:i<3?'1px solid rgba(255,255,255,0.07)':'none'}}>
+                  <div style={{width:27,height:27,borderRadius:'50%',display:'flex',
+                    alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,
+                    flexShrink:0,marginTop:1,fontFamily:'Merriweather,serif',
+                    background:t.common?'rgba(245,130,13,0.2)':'rgba(200,16,46,0.2)',
+                    color:t.common?C.orange:'#f48a9b',
+                    border:`1px solid ${t.common?'rgba(245,130,13,0.4)':'rgba(200,16,46,0.35)'}`}}>{t.n}</div>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:600,color:'rgba(255,255,255,0.9)',lineHeight:1.35,marginBottom:2}}>{t.t}</div>
+                    <div style={{fontSize:11,color:'rgba(255,255,255,0.43)'}}>{t.common?'Común a todos los cursos':'Específico por sector'}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ── STATS BAR ── */}
+      <div style={{background:C.orange}}>
+        <div style={{maxWidth:1200,margin:'0 auto',padding:`14px ${px}`,
+          display:'flex',gap:isMobile?'1.2rem':'2.5rem',
+          justifyContent:'center',flexWrap:'wrap'}}>
+          {[['12','Microcursos'],['4','Ámbitos'],['2','Temas comunes'],['100%','Online']].map(([n,l])=>(
+            <div key={l} style={{textAlign:'center'}}>
+              <div style={{fontFamily:'Merriweather,serif',fontSize:isMobile?20:24,
+                fontWeight:900,color:'#fff',lineHeight:1}}>{n}</div>
+              <div style={{fontSize:isMobile?10:11,color:'rgba(255,255,255,0.85)',
+                fontWeight:600,marginTop:2}}>{l}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── CATÁLOGO ── */}
+      <section id="microcursos" style={{background:'#f4f5f7',padding:`52px ${px}`}}>
+        <div style={{maxWidth:1200,margin:'0 auto'}}>
+          <SH eyebrow="Catálogo" title="Elige tu especialización"
+            sub="12 microcursos en 4 ámbitos profesionales. Toca cualquier curso para ver su programa completo."/>
+          {/* Filter pills – horizontal scroll on mobile */}
+          <div style={{display:'flex',gap:7,flexWrap:isMobile?'nowrap':'wrap',
+            marginBottom:'2rem',overflowX:isMobile?'auto':'visible',
+            paddingBottom:isMobile?4:0,WebkitOverflowScrolling:'touch'}}>
+            {FILTERS.map(f=>(
+              <button key={f.k} onClick={()=>setFilter(f.k)} style={{
+                padding:'7px 16px',borderRadius:20,flexShrink:0,
+                border:`1.5px solid ${filter===f.k?C.navy:C.border}`,
+                background:filter===f.k?C.navy:'#fff',
+                color:filter===f.k?'#fff':C.muted,
+                fontSize:'0.82rem',fontWeight:600,cursor:'pointer',
+                fontFamily:'Open Sans,sans-serif',transition:'all 0.16s',
+                whiteSpace:'nowrap',
+              }}>{f.l}</button>
+            ))}
+          </div>
+          <div style={{display:'grid',
+            gridTemplateColumns:isMobile?'1fr':isTablet?'1fr 1fr':'repeat(3,1fr)',
+            gap:'1rem'}}>
+            {visible.map((c,i)=><CourseCard key={c.id} course={c} onOpen={setModal} index={i}/>)}
+          </div>
+        </div>
+      </section>
+
+      {/* ── PLAN ── */}
+      <section id="plan" style={{background:'#fff',padding:`52px ${px}`}}>
+        <div style={{maxWidth:1200,margin:'0 auto'}}>
+          <SH eyebrow="Plan de estudios" title="Arquitectura común del temario"
+            sub="Los temas 1 y 2 son la base común. Los temas 3 y 4 se adaptan a cada sector. Toca cada tema para ver su detalle."/>
+          <div style={{display:'flex',gap:10,marginBottom:'1.2rem',fontSize:'0.8rem',
+            color:C.muted,flexWrap:'wrap'}}>
+            {[{l:'Temas comunes',bg:C.commonBg,b:C.commonBorder},
+              {l:'Temas específicos',bg:C.specBg,b:C.specBorder}].map(x=>(
+              <span key={x.l} style={{display:'flex',alignItems:'center',gap:5}}>
+                <span style={{width:12,height:12,borderRadius:2,background:x.bg,
+                  border:`1.5px solid ${x.b}`,display:'inline-block',flexShrink:0}}/>
+                {x.l}
+              </span>
+            ))}
+          </div>
+          <div style={{display:'flex',flexDirection:'column',gap:9}}>
+            {PLAN_GENERIC.map((t,i)=><PlanItem key={t.num} topic={t} isMobile={isMobile} index={i}/>)}
+          </div>
+        </div>
+      </section>
+
+      {/* ── METODOLOGÍA ── */}
+      <section id="metodologia" style={{background:'#f4f5f7',padding:`52px ${px}`}}>
+        <div style={{maxWidth:1200,margin:'0 auto'}}>
+          <SH eyebrow="Metodología" title="Una formación pensada para profesionales"/>
+          <div style={{display:'grid',
+            gridTemplateColumns:isMobile?'1fr':isTablet?'1fr 1fr':'repeat(3,1fr)',
+            gap:'1rem'}}>
+            {[
+              {icon:'📚',title:'Base conceptual rigurosa',desc:'Los dos primeros temas garantizan una comprensión sólida de la IA antes de la especialización sectorial.'},
+              {icon:'🎯',title:'Especialización sectorial',desc:'Los temas 3 y 4 se adaptan al sector elegido, con aplicaciones y casos de uso del ámbito profesional.'},
+              {icon:'🔗',title:'Puerta al máster',desc:'Los microcursos actúan como primera aproximación con proyección hacia programas de máster en IA.'},
+              {icon:'🌐',title:'100% online',desc:'Formación flexible para compaginar con la actividad profesional sin renunciar a la calidad académica.'},
+              {icon:'👥',title:'Sin requisitos técnicos',desc:'Diseñado para públicos amplios. Enfoque aplicado y accesible, no una formación de programación.'},
+              {icon:'🏅',title:'Reconocimiento académico',desc:'1 a 1,5 ECTS por microcurso, con reconocimiento oficial en el marco de la Formación Permanente de ESIT.'},
+            ].map((m,i)=>(
+              <div key={i} style={{background:'#fff',borderRadius:8,padding:'20px 16px',
+                border:`1px solid ${C.border}`,
+                animation:'fadeUp 0.4s ease both',animationDelay:`${i*0.06}s`}}>
+                <div style={{width:44,height:44,borderRadius:9,background:C.navy,
+                  display:'flex',alignItems:'center',justifyContent:'center',
+                  marginBottom:'0.9rem',fontSize:'1.3rem'}}>{m.icon}</div>
+                <h3 style={{fontFamily:'Merriweather,serif',fontSize:'0.9rem',fontWeight:700,
+                  color:C.navy,marginBottom:'0.45rem'}}>{m.title}</h3>
+                <p style={{fontSize:'0.83rem',color:C.muted,lineHeight:1.65}}>{m.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA ── */}
+      <section style={{background:`linear-gradient(110deg,${C.navy} 0%,${C.navyLight} 100%)`,
+        padding:`60px ${px}`,textAlign:'center'}}>
+        <h2 style={{fontFamily:'Merriweather,serif',
+          fontSize:isMobile?'1.5rem':'clamp(1.5rem,3vw,2.1rem)',
+          fontWeight:900,color:'#fff',marginBottom:'0.9rem',lineHeight:1.25}}>
+          ¿A qué sector perteneces?<br/>
+          <span style={{color:C.orange}}>Elige tu microcurso.</span>
+        </h2>
+        <p style={{color:'rgba(255,255,255,0.68)',fontSize:isMobile?'0.9rem':'0.97rem',
+          marginBottom:'2rem',lineHeight:1.75,maxWidth:480,margin:'0 auto 2rem'}}>
+          Solicita información personalizada sobre el microcurso más adecuado para tu perfil profesional.
+        </p>
+        <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap'}}>
+          <a href="mailto:informacion@esit.es" style={{background:C.red,color:'#fff',
+            padding:'13px 26px',borderRadius:5,textDecoration:'none',fontWeight:700,
+            fontSize:'0.9rem'}}>Solicitar información</a>
+          <a href="#microcursos" style={{border:'2px solid rgba(255,255,255,0.28)',color:'#fff',
+            padding:'13px 26px',borderRadius:5,textDecoration:'none',fontWeight:600,
+            fontSize:'0.9rem'}}>Ver todos los cursos</a>
+        </div>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer style={{background:'#060d1c',color:'rgba(255,255,255,0.42)',padding:`2rem ${px}`}}>
+        <div style={{maxWidth:1200,margin:'0 auto'}}>
+          <div style={{display:'flex',alignItems:isMobile?'flex-start':'center',
+            justifyContent:'space-between',flexWrap:'wrap',gap:'1rem',
+            flexDirection:isMobile?'column':'row'}}>
+            <div style={{fontFamily:'Merriweather,serif',fontSize:'1rem',
+              color:'rgba(255,255,255,0.8)',fontWeight:900}}>ESIT · IA Aplicada</div>
+            <div style={{display:'flex',gap:'1.2rem',flexWrap:'wrap'}}>
+              {['Oferta académica','Acceso estudiantes','Aviso legal','Privacidad'].map(l=>(
+                <a key={l} href="#" style={{color:'rgba(255,255,255,0.42)',
+                  textDecoration:'none',fontSize:'0.8rem'}}>{l}</a>
+              ))}
+            </div>
+            <div style={{fontSize:'0.75rem'}}>© 2025 ESIT. Todos los derechos reservados.</div>
+          </div>
+        </div>
+      </footer>
+
+      {modal&&<CourseModal course={modal} onClose={()=>setModal(null)} isMobile={isMobile}/>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+</script>
+</body>
+</html>
